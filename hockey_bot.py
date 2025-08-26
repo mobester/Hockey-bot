@@ -1,12 +1,16 @@
+# BOT VERSION: 2025-08-26-01
 import os
 import sqlite3
 from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, ContextTypes
 
 # Получаем токен из переменной окружения
 TOKEN = os.getenv('TOKEN')
 if not TOKEN:
-    raise RuntimeError("TOKEN environment variable not set")
+    print("❌ ERROR: TOKEN environment variable is not set!")
+    exit(1)
+else:
+    print(f"✅ TOKEN found: {TOKEN[:5]}...")
 
 # Инициализация базы данных
 def init_db():
@@ -25,6 +29,7 @@ def init_db():
 
 # Стартовая команда
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("✅ help_command called - VERSION 2025-08-26-01")
     user = update.effective_user
     conn = sqlite3.connect('hockey.db')
     c = conn.cursor()
@@ -46,13 +51,22 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text, parse_mode='Markdown')
 
 def main():
-    init_db()
-    application = Application.builder().token(TOKEN).build()
-    
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_command))
-    
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    try:
+        init_db()
+        print("✅ Database initialized")
+        application = Application.builder().token(TOKEN).build()
+        print("✅ Application builder created")
+
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("help", help_command))
+        print("✅ Handlers added")
+
+        print("🚀 Starting bot polling...")
+        application.run_polling(allowed_updates=Update.ALL_TYPES)
+    except Exception as e:
+        print(f"❌ CRITICAL ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()
